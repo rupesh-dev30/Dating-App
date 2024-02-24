@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dating App</title>
+</head>
+<body>
+    <h1>Profile Details: </h1>
+    <ul>
+        <li><%= profile.name %></li>
+        <li><%= profile.username %></li>
+        <li><%= profile.ids %></li>
+    </ul>
+
+    <a href="/profiles/<%= profile._id%>/edit">Change Crush?</a>
+`   <br><br><br>
+
+
+    <form method="POST" action="/profiles/<%= profile._id %>/matching">
+        <button type="submit">Check Love Status</button>
+    </form>
+</body>
+</html>

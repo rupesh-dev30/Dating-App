@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dating App</title>
+</head>
+
+<body>
+    <h1>All Profiles!</h1>
+    <ul>
+        <% for(let profile of allProfiles){ %>
+            <li><a href="/profiles/<%= profile._id %>">
+                    <%= profile.name %>
+                </a></li>
+            <%}%>
+    </ul>
+
+    <form method="GET" action="/profiles/new">
+        <button>Add New Member</button>
+    </form>
+</body>
+
+</html>
