@@ -1,103 +1,102 @@
-const express = require("express");
+const express = require('express');
+const mongoose = require('mongoose');
+const methodOverride = require('method-override');
+const { body, validationResult } = require('express-validator');
+const path = require('path');
+const Profile = require('./models/profiles.js');
+
 const app = express();
-const mongoose = require("mongoose");
-const Profile = require("./models/profiles.js")
-const path = require("path")
-const methodOverride = require("method-override")
 
-main().then(() => {
-    console.log("Connected to DB Successfully");
-}).catch(err => console.log(err));
+// Middleware
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride('_method'));
 
+// Database connection
 async function main() {
     await mongoose.connect('mongodb://127.0.0.1:27017/dating');
+    console.log('Connected to DB Successfully');
 }
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride("_method"))
+main().catch(err => console.error(err));
 
-app.get("/", (req, res) => {
-    res.send("Hello Everyone")
-})
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
 
-app.get("/profiles", async (req, res) => {
+// Routes
+app.get('/', (req, res) => {
+    res.send('Hello Everyone');
+});
+
+app.get('/profiles', async (req, res) => {
     const allProfiles = await Profile.find({});
-    res.render("./profiles/index.ejs", { allProfiles })
-})
+    res.render('./profiles/index.ejs', { allProfiles });
+});
 
-app.get("/profiles/new", (req, res) => {
-    res.render("./profiles/new.ejs");
-})
+app.get('/profiles/new', (req, res) => {
+    res.render('./profiles/new.ejs');
+});
 
-app.post("/profiles", async (req, res) => {
+app.post('/profiles', [
+    body('profile.username').notEmpty(),
+    body('profile.password').isLength({ min: 6 }),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     const profile = new Profile(req.body.profile);
     await profile.save();
-    res.redirect("/profiles");
-})
+    res.redirect('/profiles');
+});
 
-app.get("/profiles/:id/edit", async (req, res) => {
+app.get('/profiles/:id/edit', async (req, res) => {
     let { id } = req.params;
     const profile = await Profile.findById(id);
-    res.render("./profiles/edit.ejs", { profile })
-})
+    res.render('./profiles/edit.ejs', { profile });
+});
 
-app.put("/profiles/:id", async (req, res) => {
+app.put('/profiles/:id', async (req, res) => {
     let { id } = req.params;
     await Profile.findByIdAndUpdate(id, { ...req.body.profile });
-    res.redirect("/profiles");
-})
+    res.redirect('/profiles');
+});
 
-app.post("/profiles/:id/matching", async (req, res) => {
+app.post('/profiles/:id/matching', async (req, res) => {
     try {
         const { id } = req.params;
-
-        // Find the profile by its ID
         const profile = await Profile.findById(id);
 
         if (!profile) {
-            return res.status(404).send("Profile not found");
+            return res.status(404).send('Profile not found');
         }
 
-        // Find the profile with matching ids
         const matchingProfile = await Profile.findOne({ username: profile.ids, ids: profile.username });
 
-        // Check if mutual matching profile exists
         if (!matchingProfile) {
-            return res.status(200).send("No mutual matching profiles found");
+            return res.status(200).send('No mutual matching profiles found');
         }
 
-        // Render the matching.ejs template and pass the matching profile to it
-        res.render("./profiles/matching.ejs", { mutualMatchingProfile: matchingProfile });
+        res.render('./profiles/matching.ejs', { mutualMatchingProfile: matchingProfile });
     } catch (error) {
-        console.error("Error occurred while finding matching profile:", error);
-        res.status(500).send("Internal Server Error");
+        console.error('Error occurred while finding matching profile:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
 
-
-
-
-app.get("/profiles/:id", async (req, res) => {
+app.get('/profiles/:id', async (req, res) => {
     let { id } = req.params;
     const profile = await Profile.findById(id);
-    res.render("./profiles/show.ejs", { profile })
-})
+    res.render('./profiles/show.ejs', { profile });
+});
 
-// app.get("/testProfile", async (req, res) => {
-//     let sampleProfile = new Profile({
-//         username: "bittu_12_14",
-//         password: "bittu",
-//         name: "Bittu Kumar",
-//         ids: "https://www.instagram.com/ig_rupesh30/"
-//     });
-
-//     await sampleProfile.save();
-//     console.log("sample was saved");
-//     res.send("Successfull Testing");
-// })
-
-app.listen(3000, () => {
-    console.log("Server is listening to port 3000");
-}) 
+// Server setup
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is listening on port ${PORT}`);
+});
